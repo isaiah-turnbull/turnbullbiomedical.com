@@ -1,0 +1,124 @@
+/* Turnbull Biomedical — shared site styles */
+
+:root {
+  --ink: #1c2430;
+  --ink-soft: #4a5568;
+  --paper: #ffffff;
+  --paper-soft: #f5f7fa;
+  --line: #e2e6ec;
+  --accent: #1f5f8b;
+  --accent-soft: #eaf2f8;
+  --max-width: 880px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.6;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.site-header {
+  border-bottom: 1px solid var(--line);
+  padding: 1.25rem 1.5rem;
+}
+
+.site-header .wrap {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+nav a {
+  margin-left: 1.5rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+nav a:first-child { margin-left: 0; }
+nav a:hover { color: var(--accent); text-decoration: none; }
+
+main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+.hero {
+  padding: 2rem 0 3rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2.5rem;
+}
+
+.hero h1 {
+  font-size: 2.1rem;
+  margin: 0 0 0.75rem;
+}
+
+.hero p {
+  color: var(--ink-soft);
+  font-size: 1.1rem;
+  max-width: 640px;
+}
+
+h2 { font-size: 1.4rem; margin-top: 2.5rem; }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.card {
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+}
+
+.card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+.card p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+.placeholder-note {
+  background: var(--accent-soft);
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin: 1.5rem 0;
+}
+
+.trip-meta {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin-top: -0.5rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
