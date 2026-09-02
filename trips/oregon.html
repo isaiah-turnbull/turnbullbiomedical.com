@@ -4,7 +4,135 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Oregon Coast, 2026 — Trips</title>
+  <meta name="description" content="Labor Day weekend on the central Oregon coast — Agate Beach, Yaquina Head, and the sea lion docks at Newport.">
   <link rel="stylesheet" href="../assets/style.css">
+  <link rel="preconnect" href="https://api.open-meteo.com">
+  <style>
+    /* Page-local styles for the trip pages. Everything else comes from assets/style.css. */
+
+    .t-live {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.5rem 0 0;
+      min-height: 84px;
+    }
+    .t-live .t-ic { flex: 0 0 auto; width: 40px; height: 40px; color: var(--accent); }
+    .t-live .t-ic svg { display: block; width: 100%; height: 100%; }
+    .t-live-label {
+      margin: 0 0 .15rem;
+      font-size: .72rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+    .t-live-temp {
+      margin: 0;
+      font-size: 1.7rem;
+      font-weight: 700;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+    .t-live-temp small { font-size: .95rem; font-weight: 400; color: var(--ink-soft); }
+    .t-live-desc { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+
+    .t-fc { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
+    .t-fcrow {
+      display: grid;
+      grid-template-columns: 3.4rem 28px 1fr auto;
+      gap: .8rem;
+      align-items: center;
+      background: var(--paper-soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: .7rem .95rem;
+    }
+    .t-fcrow .t-d { font-size: .78rem; color: var(--ink-soft); line-height: 1.25; text-transform: uppercase; letter-spacing: .06em; }
+    .t-fcrow .t-d b { display: block; font-size: 1.2rem; color: var(--ink); letter-spacing: 0; }
+    .t-fcrow .t-ic { color: var(--accent); }
+    .t-fcrow .t-ic svg { display: block; width: 28px; height: 28px; }
+    .t-fcrow .t-cond { font-size: .95rem; min-width: 0; }
+    .t-fcrow .t-cond em { display: block; font-style: normal; font-size: .82rem; color: var(--ink-soft); }
+    .t-fcrow .t-tt { font-size: 1.05rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .t-fcrow .t-tt span { font-weight: 400; color: var(--ink-soft); }
+    .t-skel { opacity: .5; }
+
+    .t-days { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .t-day {
+      display: grid;
+      grid-template-columns: 5.5rem 1fr;
+      gap: 1.2rem;
+      align-items: start;
+    }
+    .t-day .t-mark {
+      text-align: right;
+      border-right: 2px solid var(--line);
+      padding-right: 1.2rem;
+      padding-top: .15rem;
+    }
+    .t-day .t-mark span { display: block; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+    .t-day .t-mark b { display: block; font-size: 1.5rem; line-height: 1.2; }
+    .t-day .t-body p { margin: 0 0 .5rem; }
+    .t-day .t-body p:last-child { margin-bottom: 0; }
+    .t-day .t-body p.t-dim { font-size: .92rem; color: var(--ink-soft); }
+
+    .t-links { display: flex; flex-wrap: wrap; gap: .45rem; margin: .7rem 0 0; }
+    .t-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 .9rem;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--paper-soft);
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .t-links a:hover { background: var(--accent-soft); text-decoration: none; }
+
+    .t-tides { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .t-tideday { background: var(--paper-soft); border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1.1rem 1rem; }
+    .t-tideday h3 { margin: 0 0 .5rem; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
+    .t-tiderow { display: grid; grid-template-columns: 1.3rem 4.8rem 1fr; gap: .5rem; align-items: center; padding: .2rem 0; font-size: .92rem; font-variant-numeric: tabular-nums; }
+    .t-tiderow .t-t { font-size: .72rem; letter-spacing: .06em; color: var(--ink-soft); font-weight: 600; }
+    .t-tiderow .t-bar { height: .45rem; background: var(--line); border-radius: 3px; overflow: hidden; }
+    .t-tiderow .t-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+    .t-tiderow.t-low .t-bar i { background: #b4713a; }
+
+    .t-cams { display: flex; flex-direction: column; gap: .6rem; margin-top: 1.5rem; }
+    .t-cam {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper-soft);
+      padding: .9rem 1.1rem;
+      min-height: 66px;
+    }
+    .t-cam:hover { background: var(--accent-soft); text-decoration: none; }
+    .t-cam .t-ic { flex: 0 0 auto; width: 30px; height: 30px; color: var(--accent); }
+    .t-cam .t-ic svg { display: block; width: 100%; height: 100%; }
+    .t-cam b { display: block; font-size: 1rem; color: var(--ink); }
+    .t-cam em { display: block; font-style: normal; font-size: .9rem; color: var(--ink-soft); }
+    .t-cam .t-arrow { margin-left: auto; color: var(--ink-soft); }
+
+    .t-note { font-size: .92rem; color: var(--ink-soft); margin-top: 1rem; }
+
+    @media (max-width: 32rem) {
+      .t-day { grid-template-columns: 3.6rem 1fr; gap: 0 .9rem; }
+      .t-day .t-mark { padding-right: .9rem; }
+      .t-day .t-mark b { font-size: 1.2rem; }
+      .t-fcrow { grid-template-columns: 3rem 24px 1fr auto; gap: .6rem; }
+      .t-fcrow .t-ic svg { width: 24px; height: 24px; }
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -20,30 +148,289 @@
   <main>
     <section class="hero">
       <h1>Oregon Coast, 2026</h1>
-      <p class="trip-meta">Labor Day weekend on the central Oregon coast, based around Newport.</p>
+      <p class="trip-meta">Labor Day weekend, September 5–8 — two nights above Agate Beach in Newport, and a night in Portland.</p>
     </section>
 
-    <div class="placeholder-note">
-      Placeholder page — swap in your own photos, captions, and stories from the trip.
-    </div>
+    <section>
+      <p>Newport sits at the middle of the Oregon coast, where the Yaquina River meets the Pacific under a green steel arch of a bridge. North of town the shoreline flattens into <strong>Agate Beach</strong> — two miles of hard-packed sand running up to the basalt headland at Yaquina Head, with Oregon's tallest lighthouse standing at the far end of it.</p>
+
+      <p>The beach takes its name from the agates that wash out of the gravel beds after winter storms. In September they're mostly sanded over, which is fine: what's left is one of the flattest, most walkable stretches on the coast, and a headland at the end of it with tidepools, a lighthouse, and more seabirds than you can count.</p>
+
+      <div class="t-live" id="now">
+        <div class="t-ic" id="nowIcon" aria-hidden="true"></div>
+        <div>
+          <p class="t-live-label">Newport right now</p>
+          <p class="t-live-temp" id="nowTemp">&mdash;<small>&deg;F</small></p>
+          <p class="t-live-desc" id="nowDesc">Checking the coast&hellip;</p>
+        </div>
+      </div>
+
+      <div class="t-fc" id="fc">
+        <div class="t-fcrow t-skel"><span class="t-d">Sat<b>5</b></span><span class="t-ic"></span><span class="t-cond">Loading&hellip;<em>Newport, OR</em></span><span class="t-tt">&mdash;</span></div>
+        <div class="t-fcrow t-skel"><span class="t-d">Sun<b>6</b></span><span class="t-ic"></span><span class="t-cond">Loading&hellip;<em>Newport, OR</em></span><span class="t-tt">&mdash;</span></div>
+        <div class="t-fcrow t-skel"><span class="t-d">Mon<b>7</b></span><span class="t-ic"></span><span class="t-cond">Loading&hellip;<em>Newport, OR</em></span><span class="t-tt">&mdash;</span></div>
+        <div class="t-fcrow t-skel"><span class="t-d">Tue<b>8</b></span><span class="t-ic"></span><span class="t-cond">Loading&hellip;<em>Newport, OR</em></span><span class="t-tt">&mdash;</span></div>
+      </div>
+      <p class="t-note" id="fcNote">Live conditions from Open-Meteo, refreshed whenever this page loads.</p>
+    </section>
 
     <section>
-      <h2>Highlights</h2>
+      <h2>The weekend</h2>
+      <div class="t-days">
+
+        <div class="t-day">
+          <div class="t-mark"><span>Sat</span><b>5</b><span>Sep</span></div>
+          <div class="t-body">
+            <p><strong>St. Louis to the coast.</strong> A morning nonstop into Portland, then about two and three-quarter hours southwest — OR-18 over the coast range through McMinnville, then US-101 south from Lincoln City.</p>
+            <p>Dinner on the waterfront deck at <strong>Clearwater</strong>, on Newport's bayfront, directly above the sea lions hauled out on Port Dock 1. They bark more or less continuously. That is the reason to sit outside.</p>
+            <p class="t-dim">Sunset 7:44 PM.</p>
+          </div>
+        </div>
+
+        <div class="t-day">
+          <div class="t-mark"><span>Sun</span><b>6</b><span>Sep</span></div>
+          <div class="t-body">
+            <p><strong>Oregon Coast Aquarium</strong>, across the bridge in South Beach — the giant Pacific octopus, the seabird aviary, and the shark tunnel that was Keiko's pool before he went home to Iceland.</p>
+            <p>The rest of the day is open: the beach below the house, <strong>Yaquina Head</strong> five minutes north for the lighthouse and the Quarry Cove tidepools, or <strong>Nye Beach</strong> and the bayfront ten minutes south for bookshops and chowder.</p>
+            <p class="t-dim">Sunset 7:43 PM.</p>
+          </div>
+        </div>
+
+        <div class="t-day">
+          <div class="t-mark"><span>Mon</span><b>7</b><span>Sep</span></div>
+          <div class="t-body">
+            <p><strong>Back to Portland</strong> mid-morning, about 135 miles. The night in St. Johns, in North Portland — the bridge, Cathedral Park underneath it, and Forest Park a few minutes east.</p>
+            <p class="t-dim">Sunset 7:41 PM.</p>
+          </div>
+        </div>
+
+        <div class="t-day">
+          <div class="t-mark"><span>Tue</span><b>8</b><span>Sep</span></div>
+          <div class="t-body">
+            <p><strong>Home</strong>, via Denver.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section>
+      <h2>Tides</h2>
+      <p>Predictions for NOAA station 9435380, Newport, on Yaquina Bay. Both weekend low tides fall before sunrise, so the tidepools at Quarry Cove are a poor bet this particular weekend — the afternoon lows only drop to about four feet.</p>
+
+      <div class="t-tides">
+
+        <div class="t-tideday">
+          <h3>Sat 5 Sep</h3>
+          <div class="t-tiderow t-low"><span class="t-t">L</span><span>1:33 AM</span><span class="t-bar"><i style="width:5%"></i></span></div>
+          <div class="t-tiderow"><span class="t-t">H</span><span>8:35 AM</span><span class="t-bar"><i style="width:65%"></i></span></div>
+          <div class="t-tiderow t-low"><span class="t-t">L</span><span>1:02 PM</span><span class="t-bar"><i style="width:48%"></i></span></div>
+          <div class="t-tiderow"><span class="t-t">H</span><span>7:23 PM</span><span class="t-bar"><i style="width:94%"></i></span></div>
+        </div>
+
+        <div class="t-tideday">
+          <h3>Sun 6 Sep</h3>
+          <div class="t-tiderow t-low"><span class="t-t">L</span><span>2:50 AM</span><span class="t-bar"><i style="width:3%"></i></span></div>
+          <div class="t-tiderow"><span class="t-t">H</span><span>9:55 AM</span><span class="t-bar"><i style="width:70%"></i></span></div>
+          <div class="t-tiderow t-low"><span class="t-t">L</span><span>2:33 PM</span><span class="t-bar"><i style="width:47%"></i></span></div>
+          <div class="t-tiderow"><span class="t-t">H</span><span>8:44 PM</span><span class="t-bar"><i style="width:95%"></i></span></div>
+        </div>
+
+        <div class="t-tideday">
+          <h3>Mon 7 Sep</h3>
+          <div class="t-tiderow t-low"><span class="t-t">L</span><span>3:57 AM</span><span class="t-bar"><i style="width:2%"></i></span></div>
+          <div class="t-tiderow"><span class="t-t">H</span><span>10:51 AM</span><span class="t-bar"><i style="width:76%"></i></span></div>
+          <div class="t-tiderow t-low"><span class="t-t">L</span><span>3:51 PM</span><span class="t-bar"><i style="width:40%"></i></span></div>
+          <div class="t-tiderow"><span class="t-t">H</span><span>9:56 PM</span><span class="t-bar"><i style="width:97%"></i></span></div>
+        </div>
+
+      </div>
+    </section>
+
+    <section>
+      <h2>Live cameras</h2>
+      <p>Newport is unusually well covered by webcams, and they are the fastest way to find out whether the coast is fogged in.</p>
+
+      <div class="t-cams">
+
+        <a class="t-cam" href="https://g1.ipcamlive.com/player/player.php?alias=clearwaterpatiocam">
+          <span class="t-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5h11a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M15 12.5l6-3.5v9l-6-3.5z"/><circle cx="7" cy="13" r="2.2"/></svg></span>
+          <span>
+            <b>Sea lion docks</b>
+            <em>Port Dock 1, from Clearwater's patio</em>
+          </span>
+          <span class="t-arrow">&rarr;</span>
+        </a>
+
+        <a class="t-cam" href="https://ipcamlive.com/player/player.php?alias=yaquinabaybridge">
+          <span class="t-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h20"/><path d="M2 18c0-6 4.5-10 10-10s10 4 10 10"/><path d="M6 18v-4M12 18v-7M18 18v-4"/></svg></span>
+          <span>
+            <b>Yaquina Bay Bridge</b>
+            <em>The 1936 arch, and how thick the fog is</em>
+          </span>
+          <span class="t-arrow">&rarr;</span>
+        </a>
+
+        <a class="t-cam" href="https://webcam.oregonstate.edu/yaquinabay">
+          <span class="t-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16.5c1.6 0 1.6 1.4 3.2 1.4s1.6-1.4 3.2-1.4 1.6 1.4 3.2 1.4 1.6-1.4 3.2-1.4 1.6 1.4 3.2 1.4"/><path d="M3 12c1.6 0 1.6 1.4 3.2 1.4S7.8 12 9.4 12s1.6 1.4 3.2 1.4S14.2 12 15.8 12s1.6 1.4 3.2 1.4"/><circle cx="17" cy="6" r="3"/></svg></span>
+          <span>
+            <b>Hatfield Marine Science Center</b>
+            <em>Panorama across Yaquina Bay, from OSU</em>
+          </span>
+          <span class="t-arrow">&rarr;</span>
+        </a>
+
+      </div>
+
+      <div class="t-links">
+        <a href="https://www.discovernewport.com/webcams-newport">All Newport cams</a>
+        <a href="https://forecast.weather.gov/MapClick.php?lat=44.6368&amp;lon=-124.0535">NWS forecast</a>
+        <a href="https://www.tripcheck.com/">ODOT road conditions</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Places</h2>
       <div class="card-grid">
-        <div class="card"><h3>Newport</h3><p>Add photos and notes here.</p></div>
-        <div class="card"><h3>Seal Rock</h3><p>Add photos and notes here.</p></div>
-        <div class="card"><h3>Portland</h3><p>Add photos and notes here.</p></div>
+        <div class="card">
+          <h3>Oregon Coast Aquarium</h3>
+          <p>2820 SE Ferry Slip Rd, South Beach. Open daily; the seabird aviary and the octopus are the reasons to go.</p>
+        </div>
+        <div class="card">
+          <h3>Yaquina Head</h3>
+          <p>Oregon's tallest lighthouse at 93 feet, plus the Quarry Cove tidepools, which have accessible matting down to the water.</p>
+        </div>
+        <div class="card">
+          <h3>Clearwater Restaurant</h3>
+          <p>325 SW Bay Blvd, on the bayfront. Waterfront deck directly above the sea lion docks.</p>
+        </div>
+        <div class="card">
+          <h3>Nye Beach</h3>
+          <p>Newport's old resort district — a bookshop, a chowder bowl, and a turnaround that opens onto the sand.</p>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>Notes</h2>
-      <p>A few lines about the trip overall — favorite stops, wildlife spotted, food worth remembering.</p>
+      <p>The coast runs well below the valley in September. Mornings fog in, the wind picks up every afternoon, and a sunny forecast still wants a windbreaker. Every Oregon beach is public land to the vegetation line, so you can walk as far as the headland allows — but sneaker waves and drift logs are the real hazard, and the standing advice is never to turn your back on the water.</p>
+      <p class="t-dim" style="color:var(--ink-soft);">Photos to come.</p>
     </section>
   </main>
 
   <footer class="site-footer">
     &copy; 2026 Turnbull Biomedical
   </footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var LAT = 44.6368, LON = -124.0535;
+  var TRIP = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08"];
+
+  var S = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+  var ICONS = {
+    sun:   '<svg viewBox="0 0 24 24" ' + S + '><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>',
+    part:  '<svg viewBox="0 0 24 24" ' + S + '><circle cx="8.5" cy="8.5" r="3.2"/><path d="M8.5 1.8v1.6M1.8 8.5h1.6M3.9 3.9l1.1 1.1M13.1 3.9l-1.1 1.1"/><path d="M7.5 19.5h9.8a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.8-.6 3.5 3.5 0 0 0-1.3 7z"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" ' + S + '><path d="M6.8 18.5h10.4a3.4 3.4 0 0 0 .3-6.8 4.9 4.9 0 0 0-9.4-.7 3.7 3.7 0 0 0-1.3 7.5z"/></svg>',
+    fog:   '<svg viewBox="0 0 24 24" ' + S + '><path d="M6.8 14.5h10.4a3.4 3.4 0 0 0 .3-6.8 4.9 4.9 0 0 0-9.4-.7 3.7 3.7 0 0 0-1.3 7.5z"/><path d="M4 18h16M6 21h12"/></svg>',
+    rain:  '<svg viewBox="0 0 24 24" ' + S + '><path d="M6.8 14.8h10.4a3.4 3.4 0 0 0 .3-6.8 4.9 4.9 0 0 0-9.4-.7 3.7 3.7 0 0 0-1.3 7.5z"/><path d="M8.5 18l-1 3M13 18l-1 3M17.5 18l-1 3"/></svg>',
+    storm: '<svg viewBox="0 0 24 24" ' + S + '><path d="M6.8 14.2h10.4a3.4 3.4 0 0 0 .3-6.8 4.9 4.9 0 0 0-9.4-.7 3.7 3.7 0 0 0-1.3 7.5z"/><path d="M13 16l-3 4h3.5l-1 3.2"/></svg>'
+  };
+
+  function describe(code) {
+    if (code === 0) return ["Clear", "sun"];
+    if (code === 1) return ["Mostly clear", "sun"];
+    if (code === 2) return ["Partly cloudy", "part"];
+    if (code === 3) return ["Overcast", "cloud"];
+    if (code === 45 || code === 48) return ["Fog", "fog"];
+    if (code >= 51 && code <= 57) return ["Drizzle", "rain"];
+    if (code >= 61 && code <= 67) return ["Rain", "rain"];
+    if (code >= 71 && code <= 77) return ["Snow", "rain"];
+    if (code >= 80 && code <= 82) return ["Rain showers", "rain"];
+    if (code === 85 || code === 86) return ["Snow showers", "rain"];
+    if (code >= 95) return ["Thunderstorms", "storm"];
+    return ["—", "cloud"];
+  }
+
+  var DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function label(iso) {
+    var p = iso.split("-");
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    return [DOW[d.getDay()], String(Number(p[2]))];
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  var url = "https://api.open-meteo.com/v1/forecast" +
+    "?latitude=" + LAT + "&longitude=" + LON +
+    "&current=temperature_2m,weather_code,wind_speed_10m" +
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max" +
+    "&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=10";
+
+  fetch(url, { cache: "no-store" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      var cur = data && data.current;
+      var day = data && data.daily;
+      if (!cur || !day || !day.time) throw new Error("unexpected shape");
+
+      var d = describe(cur.weather_code);
+      document.getElementById("nowIcon").innerHTML = ICONS[d[1]];
+      document.getElementById("nowTemp").innerHTML =
+        Math.round(cur.temperature_2m) + "<small>°F</small>";
+      document.getElementById("nowDesc").textContent =
+        d[0] + " · wind " + Math.round(cur.wind_speed_10m) + " mph";
+
+      var want = TRIP.filter(function (t) { return day.time.indexOf(t) !== -1; });
+      if (want.length === 0) want = day.time.slice(0, 4);
+
+      var html = "";
+      for (var i = 0; i < want.length; i++) {
+        var idx = day.time.indexOf(want[i]);
+        if (idx === -1) continue;
+        var dd = describe(day.weather_code[idx]);
+        var lab = label(want[i]);
+        var pop = day.precipitation_probability_max[idx];
+        var wind = Math.round(day.wind_speed_10m_max[idx]);
+        var sub = (pop === null || pop === undefined ? "" : pop + "% rain · ") + "wind to " + wind + " mph";
+        html +=
+          '<div class="t-fcrow">' +
+            '<span class="t-d">' + esc(lab[0]) + '<b>' + esc(lab[1]) + '</b></span>' +
+            '<span class="t-ic" aria-hidden="true">' + ICONS[dd[1]] + '</span>' +
+            '<span class="t-cond">' + esc(dd[0]) + '<em>' + esc(sub) + '</em></span>' +
+            '<span class="t-tt">' + Math.round(day.temperature_2m_max[idx]) +
+              '<span>/' + Math.round(day.temperature_2m_min[idx]) + '</span></span>' +
+          '</div>';
+      }
+      if (html) document.getElementById("fc").innerHTML = html;
+
+      var stamp = new Date();
+      document.getElementById("fcNote").textContent =
+        "Live conditions from Open-Meteo · updated " +
+        stamp.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    })
+    .catch(function () {
+      document.getElementById("nowTemp").innerHTML = "&mdash;";
+      document.getElementById("nowDesc").textContent =
+        "Couldn't reach the forecast just now.";
+      var rows = document.querySelectorAll("#fc .t-fcrow");
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].querySelector(".t-cond").innerHTML = "Not loaded<em>Newport, OR</em>";
+      }
+      document.getElementById("fcNote").innerHTML =
+        'Live weather is unavailable right now — the ' +
+        '<a href="https://forecast.weather.gov/MapClick.php?lat=44.6368&amp;lon=-124.0535">National Weather Service forecast</a> for Newport still works.';
+    });
+})();
+</script>
 </body>
 </html>
