@@ -374,7 +374,14 @@
     "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max" +
     "&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=10";
 
-  fetch(url, { cache: "no-store" })
+  var attempt = 0, lastOk = 0, timer = null;
+
+  function load() {
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (ctrl) timer = setTimeout(function () { ctrl.abort(); }, 9000);
+
+    fetch(url, ctrl ? { cache: "no-store", signal: ctrl.signal } : { cache: "no-store" })
     .then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
@@ -383,6 +390,12 @@
       var cur = data && data.current;
       var day = data && data.daily;
       if (!cur || !day || !day.time) throw new Error("unexpected shape");
+
+      if (timer) { clearTimeout(timer); timer = null; }
+      attempt = 0;
+      lastOk = Date.now();
+      document.getElementById("now").onclick = null;
+      document.getElementById("now").style.cursor = "";
 
       var d = describe(cur.weather_code);
       document.getElementById("nowIcon").innerHTML = ICONS[d[1]];
@@ -420,6 +433,9 @@
         stamp.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     })
     .catch(function () {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (attempt < 2) { attempt++; setTimeout(load, 1500 * attempt); return; }
+
       document.getElementById("nowTemp").innerHTML = "&mdash;";
       document.getElementById("nowDesc").textContent =
         "Couldn't reach the forecast just now.";
@@ -428,9 +444,25 @@
         rows[i].querySelector(".t-cond").innerHTML = "Not loaded<em>Newport, OR</em>";
       }
       document.getElementById("fcNote").innerHTML =
-        'Live weather is unavailable right now — the ' +
-        '<a href="https://forecast.weather.gov/MapClick.php?lat=44.6368&amp;lon=-124.0535">National Weather Service forecast</a> for Newport still works.';
+        'Live weather didn\'t load — tap the card above to try again, or use the ' +
+        '<a href="https://forecast.weather.gov/MapClick.php?lat=44.6368&amp;lon=-124.0535">National Weather Service forecast</a> for Newport.';
+      var card = document.getElementById("now");
+      card.style.cursor = "pointer";
+      card.onclick = function () {
+        attempt = 0;
+        document.getElementById("nowDesc").textContent = "Trying again…";
+        load();
+      };
     });
+  }
+
+  load();
+
+  window.addEventListener("online", function () { attempt = 0; load(); });
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && Date.now() - lastOk > 600000) { attempt = 0; load(); }
+  });
 })();
 </script>
 </body>
